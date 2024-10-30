@@ -1,5 +1,5 @@
 '''
-Evaluates error between simulation results and patient-specific metrics that we 
+Evaluates error between simulation results and patient-specific metrics that we
 aim to match.
 '''
 
@@ -9,10 +9,19 @@ import matplotlib.pyplot as plt
 import os
 from prediction import *
 
-from regazzoni2022_mono_pred import Simulation
+#from regazzoni2022_mono_pred import Simulation
+from regazzoni2022_mono import Simulation
+
 
 # ----------------------------- MAIN CODE ------------------------------------ #
-def gen_results(y_test, case_type, sim_parameters):
+def gen_results(y_test, case_type, sim_parameters,
+
+                #index is used when mode is one_extra.
+                output_size,
+                index=12, mode="increment",
+
+                output_path="./"):
+
     # Create an instance of the Simulation class
     simulation = Simulation(sim_parameters)
 
@@ -27,7 +36,7 @@ def gen_results(y_test, case_type, sim_parameters):
 
 
     # Get the new parameters from the baseline
-    simulation.get_parameters(y_test)
+    simulation.get_parameters_pred(y_test, index, mode)
 
     # Run simulation
     results_dict = simulation.integrate()
@@ -39,13 +48,36 @@ def gen_results(y_test, case_type, sim_parameters):
     simulation.compute_clinical_metrics(results_dict)
     sim_metrics = results_dict['clinical_metrics']
 
-    combined_input = simulation.record_input()
+
+    #combined_input = simulation.record_input(index=8) # obtain all data : 12+8 = 20
+
+    # need to map index to range of [0,8]
+    combined_input = simulation.record_input_one_extra(index=index-12)
+
+
     combined_output = simulation.record_output(sim_metrics)
 
-    combined_result = np.concatenate((combined_input, combined_output))
+    # There are all in 1-dimensional
+    #print("combined_input.shape = ", combined_input.shape)
+    #print("combined_output.shape = ", combined_output.shape)
+
+
+    # adjust combined_input size, according to the settings at the trainining state
+    if mode == "one_extra":
+        pass
+    else:
+        combined_input = combined_input[:output_size]
+
+
+    #print("combined_input.shape = ", combined_input.shape)
+    #exit(0)
+
+    #combined_result = np.concatenate((combined_input, combined_output))
+    combined_result = np.concatenate((combined_output, combined_input))
+
 
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(current_dir, f'evaluate_{case_type}')
+    output_dir = os.path.join(output_path, f'evaluate_{case_type}')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -64,7 +96,7 @@ def gen_results(y_test, case_type, sim_parameters):
     return combined_result
 
 # ---------------------------------------------------------------------------- #
-# For parallel execution in differential_evolution, need to use the following   
+# For parallel execution in differential_evolution, need to use the following
 if __name__ == "__main__":
 
     # Load parameters of model (as dictionary) (all in mmHg/mL units)
@@ -78,6 +110,12 @@ if __name__ == "__main__":
 
     # Get directory of this script
     current_dir = os.path.dirname(os.path.realpath(__file__))
+    #print("current_dir = ", current_dir)
+    #exit(0)
+
+    # saved result path of model training
+    path = "./save_results"
+
 
     # General sim parameters
     n_cardiac_cyc = 10
@@ -85,13 +123,100 @@ if __name__ == "__main__":
     save_last_n_cardiac_cycles = 2
 
 
-    num = 150
-    example_input = torch.load('filtered_output.pt')[num, :]
-    y_pred = get_prediction(example_input)
-    y_orig = torch.load('filtered_input.pt').numpy()[num, :]
 
-    y_pred_results = gen_results(y_pred, 'pred', [n_cardiac_cyc, dt, save_last_n_cardiac_cycles])
-    print(y_pred_results)
 
-    y_orig_results = gen_results(y_orig, 'orig', [n_cardiac_cyc, dt, save_last_n_cardiac_cycles])
-    print(y_orig_results)
+    dir_names_l1 = os.listdir(path)
+
+    fullpath_model = []
+
+    print("---------- scanning model files ...")
+    for f in dir_names_l1:
+
+        fullpath_model_subdir = []
+        fullpath_model_subdir.append(path + "/" + f)
+
+        #print("f = ", f)
+        dir_names_l2 = os.listdir(path + "/" + f)
+
+        for f1 in dir_names_l2:
+            if f1.endswith(".pt") is False and f1.endswith(".txt") is False:
+                #print("f1 = ", f1)
+                fullpath_model_subdir.append(path + "/" + f + "/" + f1)
+
+        fullpath_model.append(fullpath_model_subdir)
+
+    #exit(0)
+
+    # print("fullpath_model", fullpath_model)
+    # for i in fullpath_model:
+    #     print("fullpath_model = ", i)
+    # exit(0)
+
+
+    # select which data is used for prediction, batch size is 1
+    # num is the index number.
+    num = 10
+
+
+
+    for fullpath in fullpath_model:
+        fullpath_model_subdir = fullpath
+
+        print("----------- start to process : ", fullpath_model_subdir[0])
+
+
+        # deal with model inference
+        for model_path in fullpath_model_subdir[1:]: # ignore [0] element
+
+            print("process model ", model_path)
+
+
+            filtered_output_pt_path = model_path + "/" + "filtered_output.pt"
+            filtered_input_pt_path = model_path + "/" + "filtered_input.pt"
+
+
+            '''
+            currently, the code only supports batch size = 1 for inference
+            '''
+            example_input = torch.load(filtered_output_pt_path)[num, :]
+            y_orig = torch.load(filtered_input_pt_path).numpy()[num, :]
+
+
+            # Load model configuration
+            with open(os.path.join(model_path, 'model_config.json'), 'r') as f:
+                model_config = json.load(f)
+
+            output_size = model_config['output_size']
+            mode = model_config['mode']
+            index = model_config['index']
+
+            #print("y_orig.shape = ", y_orig.shape)
+
+            y_orig_new = y_orig[:output_size]
+
+
+            y_pred = get_prediction(example_input, model_path)
+
+            # y_pred and y_orig are only 1 dimensional allowed
+            #print("y_pred.shape = ", y_pred.shape)
+            #print("y_orig.shape = ", y_orig.shape)
+            #exit(0)
+
+            y_pred_results = gen_results(y_pred, 'pred',
+                                         [n_cardiac_cyc, dt, save_last_n_cardiac_cycles],
+                                         output_size=output_size,
+                                         index=index,
+                                         mode=mode,
+                                         output_path=model_path
+                                         )
+            #print(y_pred_results)
+
+
+            y_orig_results = gen_results(y_orig_new, 'orig',
+                                         [n_cardiac_cyc, dt, save_last_n_cardiac_cycles],
+                                         output_size=output_size,
+                                         index=index,
+                                         mode=mode,
+                                         output_path=model_path
+                                         )
+            #print(y_orig_results)

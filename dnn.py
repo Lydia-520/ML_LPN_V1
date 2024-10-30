@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.optim as optim
 import torch
+import torch.nn.functional as F
 
 # Define a simple model
 class SimpleNN(nn.Module):
@@ -16,15 +17,16 @@ class SimpleNN(nn.Module):
 
 
 class LargerNN(nn.Module):
-    def __init__(self, input_size, hidden_sizes, output_size):
+    def __init__(self, input_size, hidden_sizes, output_size, dropout_rate=0.5):
         super(LargerNN, self).__init__()
         layers = []
         in_features = input_size
 
-        # Add hidden layers
+        # Add hidden layers with Dropout
         for hidden_size in hidden_sizes:
             layers.append(nn.Linear(in_features, hidden_size))
             layers.append(nn.ReLU())
+            layers.append(nn.Dropout(p=dropout_rate))  # Add Dropout layer
             in_features = hidden_size
 
         # Add the final output layer
@@ -43,7 +45,14 @@ class WeightedMSELoss(nn.Module):
 
     def forward(self, output, target):
         mse_loss = torch.nn.functional.mse_loss(output, target, reduction='none')
+        #print("mse_loss = ", mse_loss.shape)
+        #exit(0)
+
         weighted_loss = mse_loss * self.target_weights
+        # print("weighted_loss = ", weighted_loss.shape)
+        # print("weighted_loss.mean() = ", weighted_loss.mean())
+        # exit(0)
+
         return weighted_loss.mean()
 
 
@@ -98,4 +107,3 @@ class LargerNNWithAttention(nn.Module):
 
         output = self.network(context)
         return output, attention_weights
-

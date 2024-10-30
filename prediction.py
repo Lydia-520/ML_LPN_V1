@@ -3,7 +3,9 @@ import torch
 from dnn import *
 import os
 import numpy as np
-from regazzoni2022_mono_pred import *
+
+#from regazzoni2022_mono_pred import *
+from regazzoni2022_mono import *
 
 # Normalize new data
 def normalize_data(data, data_min, data_max):
@@ -14,14 +16,14 @@ def denormalize_data(data, data_min, data_max):
 
 
 
-def get_prediction(example_input):
+def get_prediction(example_input, model_path):
 
     # Load model configuration
-    with open('model_config.json', 'r') as f:
+    with open(os.path.join(model_path, 'model_config.json'), 'r') as f:
         model_config = json.load(f)
 
     # Load normalization parameters
-    with open('normalization_params.json', 'r') as f:
+    with open(os.path.join(model_path, 'normalization_params.json'), 'r') as f:
         normalization_params = json.load(f)
 
     input_min = np.array(normalization_params['input_min'])
@@ -36,13 +38,15 @@ def get_prediction(example_input):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Convert to tensor and move to device
-    X_new_tensor = torch.tensor(X_new_normalized, dtype=torch.float32).to(device)
+    X_new_tensor = X_new_normalized.clone().detach().float().to(device)
 
     # Load the model
-    model = LargerNN(model_config['input_size'], model_config['hidden_sizes'], model_config['output_size']).to(device)
+    model = LargerNN(model_config['input_size'],
+                     model_config['hidden_sizes'],
+                     model_config['output_size']).to(device)
 
     # Load the state dictionary
-    model.load_state_dict(torch.load('model_state.pth'))
+    model.load_state_dict(torch.load(os.path.join(model_path, 'model_state.pth')))
     model.eval()
 
     # Predict

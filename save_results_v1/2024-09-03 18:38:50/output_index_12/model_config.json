@@ -1,0 +1,1 @@
+{"input_size": 30, "hidden_sizes": [128, 256, 256, 256, 256, 128], "output_size": 12, "mode": "one_extra", "index": 12}

@@ -21,10 +21,10 @@ max_phi_dict = {}
 def activation(t, parameters, model='double_cosine'):
     '''
     Time-varying activation function for the ventricles or atria.
-    
+
     model:
-        -'double_cosine': Function is composed of two half-cosine functions, one 
-        which increases from 0 to 1 over the contraction phase, and one which 
+        -'double_cosine': Function is composed of two half-cosine functions, one
+        which increases from 0 to 1 over the contraction phase, and one which
         decreases from 1 to 0 over the relaxation phase.
         -'double_Hill': Function is composed of two Hill functions, one which
         increases from 0 to 1 over the contraction phase, and one which decreases
@@ -45,7 +45,7 @@ def activation(t, parameters, model='double_cosine'):
                 - m1: Hill coefficient for the first Hill function
                 - m2: Hill coefficient for the second Hill function
         - model: 'double_cosine' or 'double_Hill'
-    
+
     RETURNS:
         - Activation value
     '''
@@ -78,7 +78,7 @@ def activation(t, parameters, model='double_cosine'):
         m1 = parameters['m1']
         m2 = parameters['m2']
         T_HB = parameters['T_HB']
-    
+
         # Create a string representation of the parameters
         parameters_str = str(parameters)
 
@@ -109,6 +109,9 @@ def activation(t, parameters, model='double_cosine'):
 
 class Simulation:
     def __init__(self, sim_parameters):
+
+        #print("Simulation.__init__")
+
         self.parameters = {}
         self.n_cardiac_cyc = sim_parameters[0]
         self.dt = sim_parameters[1]
@@ -215,10 +218,23 @@ class Simulation:
         Valve resistance function. If p1 >= p2, return R_min, else return R_max.
         '''
         #R_V = lambda p1, p2: np.where(p1 >= p2, R_min, R_max)
+        #print("p1", p1)
+        #print("p2", p2)
         return self.parameters['R_min'] if p1 >= p2 else self.parameters['R_max']   # Faster than np.where for scalars
 
 
-    def get_parameters(self):
+    #  modified
+    # start_array = [-1, -1.5]
+    # end_array = [1, 1.5]
+    # This is used to generate training data
+    def get_parameters_generate(self,
+
+                                # index = [0,8], choosing which variable as learnable
+                                # index = 0 : no extra learnable variables
+                                index = 0,
+
+                                start_array = [-1, -1.5],
+                                end_array = [1, 1.5]):
         bn = 3
 
         # Parameters that change
@@ -229,6 +245,33 @@ class Simulation:
         # self.parameters['QT_interval'] = self.parameters['T_HB'] * 0.5568 * np.random.uniform(0.9, 1.1)
         self.parameters['EMD'] = self.parameters['T_HB'] * 0.03625 * np.random.uniform(0.8, 1.2)
 
+
+
+        '''
+        self.RC_param_array = [num0, num1, .... ] # size = 8
+
+        self.RC_param_array.append(0.42 * (bn ** np.random.uniform(start_array[0], end_array[0])))
+
+
+        for i in range(3)):
+            self.RC_param_array[i]
+
+        '''
+
+        #------------------------------------------------------------------------------------------------
+        # changed
+
+        # default settings
+        # self.parameters['R_AR_SYS'] = 0.42 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_AR_SYS'] = 1.403 * (bn ** np.random.uniform(start_array[1], end_array[1]))
+        # self.parameters['R_VEN_SYS'] = 0.228 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_VEN_SYS'] = 60.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['R_AR_PUL'] = 0.032 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_AR_PUL'] = 10.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['R_VEN_PUL'] = 0.035 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_VEN_PUL'] = 16.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+
+        # initialization
         self.parameters['R_AR_SYS'] = 0.42
         self.parameters['C_AR_SYS'] = 1.403
         self.parameters['R_VEN_SYS'] = 0.228
@@ -237,6 +280,27 @@ class Simulation:
         self.parameters['C_AR_PUL'] = 10.0
         self.parameters['R_VEN_PUL'] = 0.035
         self.parameters['C_VEN_PUL'] = 16.0
+
+        if index == 1:
+            self.parameters['R_AR_SYS'] = 0.42 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 2:
+            self.parameters['C_AR_SYS'] = 1.403 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 3:
+            self.parameters['R_VEN_SYS'] = 0.228 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 4:
+            self.parameters['C_VEN_SYS'] = 60.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 5:
+            self.parameters['R_AR_PUL'] = 0.032 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 6:
+            self.parameters['C_AR_PUL'] = 10.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 7:
+            self.parameters['R_VEN_PUL'] = 0.035 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        if index == 8:
+            self.parameters['C_VEN_PUL'] = 16.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+
+        #------------------------------------------------------------------------------------------------
+
+
 
         self.parameters['chamber_model_linear'] = {}
         self.parameters['chamber_model_linear']['E_LV_act'] = 12.5 * (bn ** np.random.uniform(-1.5, 1.5))
@@ -325,7 +389,212 @@ class Simulation:
         self.parameters['Q_VEN_PUL_0'] = 187.58  # mL s^-1
 
 
-    def record_input(self):
+    # This is used for predication stage only
+    def get_parameters_pred(self, y_pred,
+
+                            # index is used when mode = one_extra
+                            index = 12,
+                            mode = "increment",
+
+                            # initial settings
+                            start_array = [-1, -1.5], end_array=[1, 1.5]):
+        bn = 3
+
+        # Parameters that change
+        self.parameters['BPM'] = 87
+        self.parameters['T_HB'] = 60 / self.parameters['BPM']
+        self.parameters['PR_interval'] = self.parameters['T_HB'] * 0.2639
+        # self.parameters['QRS_duration'] = self.parameters['T_HB'] * 0.1276 * np.random.uniform(0.9, 1.1)
+        # self.parameters['QT_interval'] = self.parameters['T_HB'] * 0.5568 * np.random.uniform(0.9, 1.1)
+        self.parameters['EMD'] = self.parameters['T_HB'] * 0.03625
+
+
+        # These are the default ones
+        self.parameters['R_AR_SYS'] = 0.42
+        self.parameters['C_AR_SYS'] = 1.403
+        self.parameters['R_VEN_SYS'] = 0.228
+        self.parameters['C_VEN_SYS'] = 60.0
+        self.parameters['R_AR_PUL'] = 0.032
+        self.parameters['C_AR_PUL'] = 10.0
+        self.parameters['R_VEN_PUL'] = 0.035
+        self.parameters['C_VEN_PUL'] = 16.0
+
+        #------------------------------------------------------------------------------------------------
+        # changed
+
+        # setting default values
+        # self.parameters['R_AR_SYS'] = 0.42 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_AR_SYS'] = 1.403 * (bn ** np.random.uniform(start_array[1], end_array[1]))
+        # self.parameters['R_VEN_SYS'] = 0.228 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_VEN_SYS'] = 60.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['R_AR_PUL'] = 0.032 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_AR_PUL'] = 10.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['R_VEN_PUL'] = 0.035 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+        # self.parameters['C_VEN_PUL'] = 16.0 * (bn ** np.random.uniform(start_array[0], end_array[0]))
+
+
+        # update these values, according to settings
+        if mode == "one_extra":
+            # y_pred is 1-dimensional only allowed here
+            #print("y_pred.shape[0] = ", y_pred.shape[0])
+
+            if index == 13:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+            if index == 14:
+                self.parameters['C_AR_SYS'] = y_pred[13-1]
+            if index == 15:
+                self.parameters['R_VEN_SYS'] = y_pred[13-1]
+            if index == 16:
+                self.parameters['C_VEN_SYS'] = y_pred[13-1]
+            if index == 17:
+                self.parameters['R_AR_PUL'] = y_pred[13-1]
+            if index == 18:
+                self.parameters['C_AR_PUL'] = y_pred[13-1]
+            if index == 19:
+                self.parameters['R_VEN_PUL'] = y_pred[13-1]
+            if index == 20:
+                self.parameters['C_VEN_PUL'] = y_pred[13-1]
+
+        if mode == "increment":
+            if index == 13:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+            if index == 14:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+            if index == 15:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+            if index == 16:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+                self.parameters['C_VEN_SYS'] = y_pred[16-1]
+            if index == 17:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+                self.parameters['C_VEN_SYS'] = y_pred[16-1]
+                self.parameters['R_AR_PUL'] = y_pred[17-1]
+            if index == 18:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+                self.parameters['C_VEN_SYS'] = y_pred[16-1]
+                self.parameters['R_AR_PUL'] = y_pred[17-1]
+                self.parameters['C_AR_PUL'] = y_pred[18-1]
+            if index == 19:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+                self.parameters['C_VEN_SYS'] = y_pred[16-1]
+                self.parameters['R_AR_PUL'] = y_pred[17-1]
+                self.parameters['C_AR_PUL'] = y_pred[18-1]
+                self.parameters['R_VEN_PUL'] = y_pred[19-1]
+            if index == 20:
+                self.parameters['R_AR_SYS'] = y_pred[13-1]
+                self.parameters['C_AR_SYS'] = y_pred[14-1]
+                self.parameters['R_VEN_SYS'] = y_pred[15-1]
+                self.parameters['C_VEN_SYS'] = y_pred[16-1]
+                self.parameters['R_AR_PUL'] = y_pred[17-1]
+                self.parameters['C_AR_PUL'] = y_pred[18-1]
+                self.parameters['R_VEN_PUL'] = y_pred[19-1]
+                self.parameters['C_VEN_PUL'] = y_pred[20-1]
+
+        #------------------------------------------------------------------------------------------------
+
+
+
+        self.parameters['chamber_model_linear'] = {}
+        self.parameters['chamber_model_linear']['E_LV_act'] = y_pred[0]
+        self.parameters['chamber_model_linear']['E_LV_pas'] = y_pred[1]
+        self.parameters['chamber_model_linear']['E_RV_act'] = y_pred[2]
+        self.parameters['chamber_model_linear']['E_RV_pas'] = y_pred[3]
+        self.parameters['chamber_model_linear']['E_LA_act'] = y_pred[4]
+        self.parameters['chamber_model_linear']['E_LA_pas'] = y_pred[5]
+        self.parameters['chamber_model_linear']['E_RA_act'] = y_pred[6]
+        self.parameters['chamber_model_linear']['E_RA_pas'] = y_pred[7]
+        self.parameters['chamber_model_linear']['V0_LV'] = y_pred[8]
+        self.parameters['chamber_model_linear']['V0_RV'] = y_pred[9]
+        self.parameters['chamber_model_linear']['V0_LA'] = y_pred[10]
+        self.parameters['chamber_model_linear']['V0_RA'] = y_pred[11]
+
+        ## Parameters that does not change
+        self.parameters['t_final'] = self.parameters['T_HB'] * self.n_cardiac_cyc
+        # self.parameters['n_timesteps'] = int(self.parameters['t_final'] / self.dt)
+        self.parameters['n_timesteps'] = int(self.n_cardiac_cyc / self.dt)
+        self.parameters['save_last_n_timesteps'] = int(
+            self.save_last_n_cardiac_cycles / self.n_cardiac_cyc * self.parameters['n_timesteps'])
+
+        # Chamber model: 'linear' or 'corsini2014' or 'zhang2023
+        self.parameters['chamber_model'] = 'linear'
+        # Activation model: 'double_cosine' or 'double_Hill'
+        self.parameters['activation_model'] = 'double_Hill'
+
+        # Intermediate timing parameters
+        self.parameters['t_start_A'] = self.parameters['EMD']
+        # self.parameters['t_end_A'] = self.parameters['PR_interval'] + self.parameters['QRS_duration']
+        self.parameters['t_start_V'] = self.parameters['PR_interval'] + self.parameters['EMD']
+        # self.parameters['t_end_V'] = self.parameters['PR_interval'] + self.parameters['QT_interval']
+
+        self.parameters['timing_parameters_double_Hill'] = {}
+
+        self.parameters['timing_parameters_double_Hill']['m1_LA'] = 1.32
+        self.parameters['timing_parameters_double_Hill']['m2_LA'] = 13.1
+        self.parameters['timing_parameters_double_Hill']['tau1_LA'] = self.parameters['T_HB'] * 0.110
+        self.parameters['timing_parameters_double_Hill']['tau2_LA'] = self.parameters['T_HB'] * 0.210
+        self.parameters['timing_parameters_double_Hill']['t_C_LA'] = self.parameters['t_start_A']
+
+        self.parameters['timing_parameters_double_Hill']['m1_RA'] = self.parameters['timing_parameters_double_Hill']['m1_LA']
+        self.parameters['timing_parameters_double_Hill']['m2_RA'] = self.parameters['timing_parameters_double_Hill']['m2_LA']
+        self.parameters['timing_parameters_double_Hill']['tau1_RA'] = self.parameters['timing_parameters_double_Hill']['tau1_LA']
+        self.parameters['timing_parameters_double_Hill']['tau2_RA'] = self.parameters['timing_parameters_double_Hill']['tau2_LA']
+        self.parameters['timing_parameters_double_Hill']['t_C_RA'] = self.parameters['timing_parameters_double_Hill']['t_C_LA']
+
+        self.parameters['timing_parameters_double_Hill']['m1_LV'] = 1.32
+        self.parameters['timing_parameters_double_Hill']['m2_LV'] = 27.4
+        self.parameters['timing_parameters_double_Hill']['tau1_LV'] = self.parameters['T_HB'] * 0.269
+        self.parameters['timing_parameters_double_Hill']['tau2_LV'] = self.parameters['T_HB'] * 0.452
+        self.parameters['timing_parameters_double_Hill']['t_C_LV'] = self.parameters['t_start_V']
+
+        self.parameters['timing_parameters_double_Hill']['m1_RV'] = self.parameters['timing_parameters_double_Hill']['m1_LV']
+        self.parameters['timing_parameters_double_Hill']['m2_RV'] = self.parameters['timing_parameters_double_Hill']['m2_LV']
+        self.parameters['timing_parameters_double_Hill']['tau1_RV'] = self.parameters['timing_parameters_double_Hill']['tau1_LV']
+        self.parameters['timing_parameters_double_Hill']['tau2_RV'] = self.parameters['timing_parameters_double_Hill']['tau2_LV']
+        self.parameters['timing_parameters_double_Hill']['t_C_RV'] = self.parameters['timing_parameters_double_Hill']['t_C_LV']
+
+        self.parameters['L_AR_SYS'] = 0.005
+        self.parameters['Z_AR_SYS'] = 0
+        self.parameters['L_VEN_SYS'] = 0.0005
+        self.parameters['L_AR_PUL'] = 0.0005
+        self.parameters['Z_AR_PUL'] = 0
+        self.parameters['L_VEN_PUL'] = 0.0005
+
+        self.parameters['R_min'] = 0.0075
+        self.parameters['R_max'] = 7.5
+
+        # Initial conditions
+        self.parameters['V_LA_0'] = 59.79   # mL
+        self.parameters['V_LV_0'] = 90.31   # mL
+        self.parameters['V_RA_0'] = 75.77   # mL
+        self.parameters['V_RV_0'] = 130.42  # mL
+        self.parameters['p_LA_0'] = 4.987   # mmHg
+        self.parameters['p_LV_0'] = 4.425   # mmHg
+        self.parameters['p_RA_0'] = 2.57    # mmHg
+        self.parameters['p_RV_0'] = 2.14    # mmHg
+        self.parameters['p_AR_SYS_0'] = 63.44  # mmHg
+        self.parameters['p_VEN_SYS_0'] = 29.66  # mmHg
+        self.parameters['p_AR_PUL_0'] = 13.81  # mmHg
+        self.parameters['p_VEN_PUL_0'] = 11.36  # mmHg
+        self.parameters['Q_AR_SYS_0'] = 92.76  # mL s^-1
+        self.parameters['Q_VEN_SYS_0'] = 119.04  # mL s^-1
+        self.parameters['Q_AR_PUL_0'] = 77.02  # mL s^-1
+        self.parameters['Q_VEN_PUL_0'] = 187.58  # mL s^-1
+
+
+
+    # 12 numbers for the filtered_input.pt
+    def record_input_def(self):
 
         combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
                                     self.parameters['chamber_model_linear']['E_LV_pas'],
@@ -338,10 +607,370 @@ class Simulation:
                                     self.parameters['chamber_model_linear']['V0_LV'],
                                     self.parameters['chamber_model_linear']['V0_RV'],
                                     self.parameters['chamber_model_linear']['V0_LA'],
-                                    self.parameters['chamber_model_linear']['V0_RA']
+                                    self.parameters['chamber_model_linear']['V0_RA'],
                                    ])
 
         return combined_input
+
+    #----------------------------------------------------------------------------
+
+    # increment mode
+    def record_input_increment(self, index=0):
+
+        if(index == 0): # get 12 numbers
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                       ])
+
+
+        elif(index == 1):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['R_AR_SYS']
+                                       ])
+
+
+
+        elif(index == 2):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 2
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                       ])
+
+
+        elif(index == 3):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 3
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS']
+                                       ])
+
+
+        elif(index == 4):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 4
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS'],
+                                        self.parameters['C_VEN_SYS']
+                                       ])
+
+
+        elif(index == 5):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 5
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS'],
+                                        self.parameters['C_VEN_SYS'],
+                                        self.parameters['R_AR_PUL'],
+                                       ])
+
+        elif(index == 6):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 6
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS'],
+                                        self.parameters['C_VEN_SYS'],
+                                        self.parameters['R_AR_PUL'],
+                                        self.parameters['C_AR_PUL'],
+                                       ])
+        elif(index == 7):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 7
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS'],
+                                        self.parameters['C_VEN_SYS'],
+                                        self.parameters['R_AR_PUL'],
+                                        self.parameters['C_AR_PUL'],
+                                        self.parameters['R_VEN_PUL'],
+                                       ])
+
+        elif(index == 8):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 8
+                                        self.parameters['R_AR_SYS'],
+                                        self.parameters['C_AR_SYS'],
+                                        self.parameters['R_VEN_SYS'],
+                                        self.parameters['C_VEN_SYS'],
+                                        self.parameters['R_AR_PUL'],
+                                        self.parameters['C_AR_PUL'],
+                                        self.parameters['R_VEN_PUL'],
+                                        self.parameters['C_VEN_PUL']
+                                       ])
+
+        return combined_input
+
+
+    # one_extra mode
+    # index = 0: get the default 12 numbers
+    # index = [1,8]: choose one extra different number
+    def record_input_one_extra(self, index=0):
+
+        if(index == 0): # get 12 numbers
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                       ])
+
+
+        elif(index == 1):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['R_AR_SYS']
+                                       ])
+
+
+
+        elif(index == 2):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['C_AR_SYS'],
+                                       ])
+
+
+        elif(index == 3):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['R_VEN_SYS']
+                                       ])
+
+
+        elif(index == 4):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['C_VEN_SYS']
+                                       ])
+
+
+        elif(index == 5):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['R_AR_PUL'],
+                                       ])
+
+        elif(index == 6):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['C_AR_PUL'],
+                                       ])
+        elif(index == 7):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['R_VEN_PUL'],
+                                       ])
+
+        elif(index == 8):
+            combined_input = np.array([ self.parameters['chamber_model_linear']['E_LV_act'],
+                                        self.parameters['chamber_model_linear']['E_LV_pas'],
+                                        self.parameters['chamber_model_linear']['E_RV_act'],
+                                        self.parameters['chamber_model_linear']['E_RV_pas'],
+                                        self.parameters['chamber_model_linear']['E_LA_act'],
+                                        self.parameters['chamber_model_linear']['E_LA_pas'],
+                                        self.parameters['chamber_model_linear']['E_RA_act'],
+                                        self.parameters['chamber_model_linear']['E_RA_pas'],
+                                        self.parameters['chamber_model_linear']['V0_LV'],
+                                        self.parameters['chamber_model_linear']['V0_RV'],
+                                        self.parameters['chamber_model_linear']['V0_LA'],
+                                        self.parameters['chamber_model_linear']['V0_RA'],
+                                        # add 1
+                                        self.parameters['C_VEN_PUL']
+                                       ])
+
+        return combined_input
+
+
+    #----------------------------------------------------------------------------
+
+
 
     def regazzoni_2022_lpn_ode(self, t, y):
         '''
@@ -388,6 +1017,11 @@ class Simulation:
 
         # Cardiac pressures
         if self.parameters['chamber_model'] == 'linear':
+
+            # This branch is entered
+            #print("self.parameters['chamber_model'] = ", self.parameters['chamber_model'])
+            #exit(0)
+
             chamber_model_parameters = self.parameters['chamber_model_linear']
 
             # Passive elastances
@@ -439,7 +1073,7 @@ class Simulation:
         dQ_VEN_PUL = R_VEN_PUL/L_VEN_PUL * (-Q_VEN_PUL - (p_LA - p_VEN_PUL) / R_VEN_PUL)
 
 
-        # Package derivatives
+        # Package derivatives, 12
         return np.array([dV_LA, dV_LV, dV_RA, dV_RV,
                          dp_AR_SYS, dp_VEN_SYS, dp_AR_PUL, dp_VEN_PUL,
                          dQ_AR_SYS, dQ_VEN_SYS, dQ_AR_PUL, dQ_VEN_PUL])
@@ -479,19 +1113,28 @@ class Simulation:
         #    real t[n+1], y[n+1,m]: the times and solution values.
         #
 
-        if ( np.ndim ( y0 ) == 0 ):
+        if ( np.ndim ( y0 ) == 0 ): # np.ndim ( y0 ) returns the dimension of y0
             m = 1
         else:
-            m = len ( y0 )
+            m = len ( y0 ) # m = 12
 
+
+        # tspan = [0, t_final]
         tfirst = tspan[0]
         tlast = tspan[1]
         dt = ( tlast - tfirst ) / n
         t = np.zeros ( n + 1 )
         y = np.zeros ( [ n + 1, m ] )
+        #print("==== n = ", n)
+
         t[0] = tspan[0]
         y[0,:] = y0
 
+        #print("==== y.shape = ", y.shape)
+        #print("==== y0.shape = ", y0.shape)
+        #exit(0)
+
+        # This completes the calculus integration
         for i in range ( 0, n ):
 
             f1 = dydt ( t[i],            y[i,:] )
@@ -511,7 +1154,7 @@ class Simulation:
         General sim parameters defined below.
         '''
 
-        # Unpack initial conditions
+        # Unpack initial conditions, total 12
         V_LA_0 = self.parameters['V_LA_0']
         V_LV_0 = self.parameters['V_LV_0']
         V_RA_0 = self.parameters['V_RA_0']
@@ -525,7 +1168,7 @@ class Simulation:
         Q_AR_PUL_0 = self.parameters['Q_AR_PUL_0']
         Q_VEN_PUL_0 = self.parameters['Q_VEN_PUL_0']
 
-        # Unpack other parameters
+        # Unpack other parameters, total 17
         R_AR_SYS = self.parameters['R_AR_SYS']
         C_AR_SYS = self.parameters['C_AR_SYS']
         L_AR_SYS = self.parameters['L_AR_SYS']
@@ -544,6 +1187,7 @@ class Simulation:
         R_max = self.parameters['R_max']
         T_HB = self.parameters['T_HB']
 
+        # total 3
         t_final = self.parameters['t_final']
         n_timesteps = self.parameters['n_timesteps']
         save_last_n_timesteps = self.parameters['save_last_n_timesteps']
@@ -554,10 +1198,23 @@ class Simulation:
                         p_AR_SYS_0, p_VEN_SYS_0, p_AR_PUL_0, p_VEN_PUL_0,
                         Q_AR_SYS_0, Q_VEN_SYS_0, Q_AR_PUL_0, Q_VEN_PUL_0])
 
+        #print("y_0.shape = ", y_0.shape) # 12
+        #exit(0)
+
         # Integrate ODE system
         # t1 = time.time()
         t, y = self.rk4(self.regazzoni_2022_lpn_ode, [0, t_final], y_0, n_timesteps)
         # print(f"{time.time() - t1:.2f}")
+
+        # regazzoni_2022_lpn_ode: a function defined above
+        # rk4, a function defined above
+
+        #print("t_final=", t_final)
+
+        #print("t.shape = ", t.shape) # (10001,)
+        #print("y.shape = ", y.shape) # (10001, 12)
+        #exit(0)
+
 
         t = t[-save_last_n_timesteps:]
         V_LA = y[-save_last_n_timesteps:,0]
@@ -648,6 +1305,7 @@ class Simulation:
             'A_RA': self.A_RA(t)
         }
 
+        #print("results_dict = ", len(results_dict))
         return results_dict
 
     def save_results(self, results_dict, output_dir):
@@ -719,7 +1377,7 @@ class Simulation:
                     results_dict['A_LA'][i],
                     results_dict['A_RA'][i],
                 ))
-        
+
         # Save clinical metrics to text file. Print value and units
         with open(os.path.join(output_dir, 'clinical_metrics.txt'), 'w') as f:
             for key, value in results_dict['clinical_metrics'].items():
@@ -741,7 +1399,7 @@ class Simulation:
                     results_dict['V_RA'][i],
                     results_dict['p_RA'][i],
                 ))
-            
+
 
     def find_closest_index(lst, value):
         return min(range(len(lst)), key = lambda index : abs(lst[index]-value))
@@ -777,9 +1435,9 @@ class Simulation:
 
         # Compute time derivatives of valve resistances
         dR_MV = np.gradient(results_dict['R_MV'], dt)
-        dR_AV = np.gradient(results_dict['R_AV'], dt) 
+        dR_AV = np.gradient(results_dict['R_AV'], dt)
         dR_TV = np.gradient(results_dict['R_TV'], dt)
-        dR_PV = np.gradient(results_dict['R_PV'], dt) 
+        dR_PV = np.gradient(results_dict['R_PV'], dt)
 
         # Plot valve resistances and their time derivatives
         #plt.figure()
@@ -812,7 +1470,7 @@ class Simulation:
         t_PV_open = results_dict['time'][n_PV_open]
 
 
-        # Find timestep of start of atrial contraction. Start of atrial 
+        # Find timestep of start of atrial contraction. Start of atrial
         # contraction marked by maximum in second derivative of atrial activation
         # (either elastance or active pressure)
 
@@ -837,7 +1495,7 @@ class Simulation:
         prominences = peak_prominences(d2A_RA, n_C_RA)[0]   # Compute prominences of peaks
         n_C_RA = n_C_RA[prominences.argsort()[-n_cycles:]]  # Extract the first n_cycle peaks with the highest prominences
         t_C_RA = results_dict['time'][n_C_RA]
-    
+
         # Save results in results_dict
         results_dict['n_MV_close'] = n_MV_close
         results_dict['n_MV_open'] = n_MV_open
@@ -1016,7 +1674,7 @@ class Simulation:
                 # Reset color cycle after 5 iteration
                 if i % 5 == 0:
                     plt.gca().set_prop_cycle(None)
-                
+
                 # Plot cardiac phases of PV loop in different colors
                 plt.plot(results_dict[V][n_close_open[i]:n_close_open[i+1]+1], results_dict[p][n_close_open[i]:n_close_open[i+1]+1], '--')
 
@@ -1026,8 +1684,8 @@ class Simulation:
                     arrow_direction_x = results_dict[V][n_mid+1] - results_dict[V][n_mid]
                     arrow_direction_y = results_dict[p][n_mid+1] - results_dict[p][n_mid]
 
-                    plt.arrow(results_dict[V][n_mid], results_dict[p][n_mid], 
-                            arrow_direction_x, arrow_direction_y, 
+                    plt.arrow(results_dict[V][n_mid], results_dict[p][n_mid],
+                            arrow_direction_x, arrow_direction_y,
                             head_width=2.0, fc='k', ec='k')
 
             # Plot markers at cardiac phase transitions
@@ -1037,7 +1695,7 @@ class Simulation:
             plt.plot(results_dict[V][results_dict['n_AV_open']], results_dict[p][results_dict['n_AV_open']], 'ks', fillstyle='none', label='AV open')
             plt.plot(results_dict[V][results_dict['n_AV_close']], results_dict[p][results_dict['n_AV_close']], 'k+', fillstyle='none', label='AV close')
 
-       
+
         elif chamber in ['RV', 'RA']:
             # Extract valve opening and closing timesteps
             n_TV_close = results_dict['n_TV_close']
@@ -1053,7 +1711,7 @@ class Simulation:
                                 f"TV_close: {len(n_TV_close)}, TV_open: {len(n_TV_open)}, "
                                 f"PV_close: {len(n_PV_close)}, PV_open: {len(n_PV_open)}, C_RA: {len(n_C_RA)}"
                               )
-        
+
             # Combine valve opening and closing timesteps into single array
             n_close_open = np.sort(np.concatenate((n_TV_close, n_TV_open, n_PV_close, n_PV_open, n_C_RA)))
 
@@ -1075,8 +1733,8 @@ class Simulation:
                     arrow_direction_x = results_dict[V][n_mid+1] - results_dict[V][n_mid]
                     arrow_direction_y = results_dict[p][n_mid+1] - results_dict[p][n_mid]
 
-                    plt.arrow(results_dict[V][n_mid], results_dict[p][n_mid], 
-                            arrow_direction_x, arrow_direction_y, 
+                    plt.arrow(results_dict[V][n_mid], results_dict[p][n_mid],
+                            arrow_direction_x, arrow_direction_y,
                             head_width=2.0, fc='k', ec='k')
 
             # Plot markers at cardiac phase transitions
@@ -1092,7 +1750,7 @@ class Simulation:
 
         # Restore the original font size
         plt.rcParams.update({'font.size': original_font_size})
-        
+
     def plot_results(self, results_dict, output_dir, font_size=12):
         '''
         Plot and save results.
@@ -1115,7 +1773,7 @@ class Simulation:
         plt.savefig(os.path.join(output_dir, 'pv_loops.png'))
         plt.close()
 
-        
+
         # self.calc_cardiac_phases(results_dict)
         #
         # # Cardiac volumes
@@ -1339,13 +1997,13 @@ class Simulation:
         clinical_metrics['LAESV'] = {'Value': np.min(results_dict['V_LA']), 'Units': 'mL'}
         clinical_metrics['RAEDV'] = {'Value': np.max(results_dict['V_RA']), 'Units': 'mL'}
         clinical_metrics['RAESV'] = {'Value': np.min(results_dict['V_RA']), 'Units': 'mL'}
-  
+
         # Stroke volumes (mL)
         clinical_metrics['LVSV'] = {'Value': clinical_metrics['LVEDV']['Value'] - clinical_metrics['LVESV']['Value'], 'Units': 'mL'}
         clinical_metrics['RVSV'] = {'Value': clinical_metrics['RVEDV']['Value'] - clinical_metrics['RVESV']['Value'], 'Units': 'mL'}
         clinical_metrics['LASV'] = {'Value': clinical_metrics['LAEDV']['Value'] - clinical_metrics['LAESV']['Value'], 'Units': 'mL'}
         clinical_metrics['RASV'] = {'Value': clinical_metrics['RAEDV']['Value'] - clinical_metrics['RAESV']['Value'], 'Units': 'mL'}
-        
+
         # Ejection fraction (no units)
         clinical_metrics['LVEF'] = {'Value': clinical_metrics['LVSV']['Value'] / clinical_metrics['LVEDV']['Value'], 'Units': '[]'}
         clinical_metrics['RVEF'] = {'Value': clinical_metrics['RVSV']['Value'] / clinical_metrics['RVEDV']['Value'], 'Units': '[]'}
@@ -1365,6 +2023,7 @@ class Simulation:
         results_dict['clinical_metrics'] = clinical_metrics
 
 
+    # 30 numbers for the filtered_output.pt
     def record_output(self, sim_metrics):
 
         combined_output = np.array([sim_metrics['P_sys']['Value'],
@@ -1401,6 +2060,40 @@ class Simulation:
 
         return combined_output
 
+
+    # copied from regazzoni2022_mono_pred.py as a backup code
+    def record_output_pred(self, sim_metrics):
+
+        combined_output = np.array([sim_metrics['P_sys']['Value'],
+                                    sim_metrics['P_dias']['Value'],
+                                    sim_metrics['P_sys_pul']['Value'],
+                                    sim_metrics['P_dias_pul']['Value'],
+                                    sim_metrics['MAP']['Value'],
+                                    sim_metrics['mPAP']['Value'],
+                                    sim_metrics['CVP']['Value'],
+                                    sim_metrics['PAWP']['Value'],
+                                    sim_metrics['LVEDV']['Value'],
+                                    sim_metrics['LVESV']['Value'],
+                                    sim_metrics['RVEDV']['Value'],
+                                    sim_metrics['RVESV']['Value'],
+                                    sim_metrics['LAEDV']['Value'],
+                                    sim_metrics['LAESV']['Value'],
+                                    sim_metrics['RAEDV']['Value'],
+                                    sim_metrics['RAESV']['Value'],
+                                    sim_metrics['LVSV']['Value'],
+                                    sim_metrics['RVSV']['Value'],
+                                    sim_metrics['LASV']['Value'],
+                                    sim_metrics['RASV']['Value'],
+                                    sim_metrics['LVEF']['Value'],
+                                    sim_metrics['RVEF']['Value'],
+                                    sim_metrics['CO']['Value'],
+                                    sim_metrics['SVR']['Value'],
+                                    sim_metrics['PVR']['Value'],
+                                    sim_metrics['LVSW']['Value'],
+                                    sim_metrics['RVSW']['Value'],
+                                   ])
+
+        return combined_output
 
 
 # Run the simulation if executed as script
